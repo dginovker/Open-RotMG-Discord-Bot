@@ -115,6 +115,26 @@ function harness(publicOrigin = origin) {
   const publish = bugPublisher({rest, botId: 'bot', config: {url: 'http://127.0.0.1:18923/internal/discord/bugs', publicOrigin, token: 'game-secret', githubToken: 'github-secret'}, request, log: (...args) => logs.push(args)});
   return {report, posts, issues, comments, logs, receipts, messages, attachments, publish, fail: value => {failure = value;}};
 }
+test('new player reports create one labeled issue across a lost receipt', async () => {
+  for (const schema of [2, 3]) {
+    const h = harness(); h.report.schema = schema;
+    h.fail('issue_number'); await h.publish();
+    assert.equal(h.issues.length, 1);
+    assert.deepEqual(h.issues[0].labels, ['Player Report']);
+    assert.equal(h.receipts.length, 0);
+    await h.publish();
+    assert.equal(h.issues.length, 1); assert.equal(h.posts.length, 1);
+    assert.deepEqual(h.receipts.map(r => r.target), ['issue_number', 'public_message_id']);
+  }
+});
+test('reconciliation preserves existing issue labels without backfilling', async () => {
+  const h = harness(), existing = {number: 42, body: `<!-- openrotmg-bug:${h.report.id} -->\nOriginal report`, labels: ['bug']};
+  h.issues.push(structuredClone(existing));
+  await h.publish();
+  assert.deepEqual(h.issues, [existing]);
+  assert.equal(h.report.delivery.issue_number, '42');
+  assert.equal(h.posts.length, 1);
+});
 test('issue preserves the full report-time server commit across a lost receipt', async () => {
   const h = harness(), server = '0123456789abcdef'.repeat(2) + '01234567';
   h.report.diagnostics.versions = {server, client: 'b'.repeat(40), website: 'c'.repeat(40)};

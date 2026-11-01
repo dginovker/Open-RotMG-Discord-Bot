@@ -61,7 +61,8 @@ export function bugIssue(report, gameOrigin) {
   const browser = ['Chrome', 'Firefox', 'Edge', 'Safari'].includes(environment.browser) ? environment.browser : 'Unknown browser';
   const os = ['Windows', 'macOS', 'Linux', 'Android', 'iOS'].includes(environment.os) ? environment.os : 'unknown OS';
   const description = report.message_untrusted.split(/\r?\n/).map(line => `> ${text(line)}`).join('\n');
-  return {title, body: [
+  // Classify at creation without relabeling reconciled issues: https://github.com/OpenRotMG/Open-RotMG-Server/issues/1288
+  return {title, labels: ['Player Report'], body: [
     `<!-- openrotmg-bug:${report.id} -->`, description, '',
     `**Reporter:** ${reporter(report)}  `,
     `**Environment:** ${browser} on ${os}  `,
